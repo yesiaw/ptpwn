@@ -1,7 +1,14 @@
 # ptpwn
-Tool to bypass progress reset when modifying user profile in Cisco Packet Tracer.</br>__Only works on 6.2.0.0052 and 6.3.0.0009.__
 
-Instructions:
+Tool to bypass progress reset when modifying user profile in Cisco Packet Tracer.
+
+### Supported versions
+
+* 6.2.0.0052
+* 6.3.0.0009
+* 7.0.0.0201
+
+### Instructions
 
 1. Run Packet Tracer.
 2. Run ptpwn.
