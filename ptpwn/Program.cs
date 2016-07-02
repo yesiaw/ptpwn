@@ -7,25 +7,12 @@ namespace ptpwn
 {
     class Program
     {
-        static PacketTracer _version62 = new PacketTracer
-        (
-            new IntPtr(0x0281F628),
-            new IntPtr(0x00C78633),
-            "6.2.0.0052"
-        );
-
-        static PacketTracer _version63 = new PacketTracer
-        (
-            new IntPtr(0x02D97670),
-            new IntPtr(0x00C823C3),
-            "6.3.0.0009"
-        );
-
         static void Main(string[] args)
         {
             foreach (var process in Process.GetProcesses())
             {
-                if (process.ProcessName != "PacketTracer6")
+                if (process.ProcessName != "PacketTracer6" &&
+                    process.ProcessName != "PacketTracer7")
                     continue;
 
                 var ptr = NativeMethods.OpenProcess(0x001F0FFF, true, process.Id);
@@ -36,38 +23,39 @@ namespace ptpwn
                 if (version == null)
                     Die("unknown packet tracer version");
 
-                DoMagic(ptr, version.TargetPtr);
+                DoMagic(ptr, version);
             }
         }
 
-        static void DoMagic(IntPtr handle, IntPtr target)
+        static void DoMagic(IntPtr handle, PacketTracer version)
         {
-            //jump to 0x00C78726 or 0x00C824B6 immediately to skip all of the checks and warnings
+            //replace the instruction at version.Target with a jmp rel32 instruction
+            //the goal is to skip all of the checks and warnings related to user profile changes
+            unchecked
+            {
+                //calculate how far we need to jump
+                //-5 because the jmp rel32 instruction is 5 bytes long
+                uint dist = (uint)version.EndpointPtr.ToInt32() - (uint)version.TargetPtr.ToInt32() - 5u;
 
-            //dist:
-            //(0x00C78726 or 0x00C824B6) - target = 0x24D
-            //0x24D - 0x5 (len of jmp rel32) = 0x248
-            WriteMemory(handle, target, new byte[] { 0xE9, 0x48, 0x02, 0x00, 0x00 });
+                WriteMemory(handle,
+                   version.TargetPtr,
+                   new byte[] { 0xE9, (byte)dist, (byte)(dist >> 8), (byte)(dist >> 16), (byte)(dist >> 24) }
+               );
+            }
         }
 
         static PacketTracer ReadVersion(IntPtr process)
         {
-            byte[] version62Bytes = ReadMemory(process, _version62.VersionPtr, (uint)_version62.ToString().Length);
-            byte[] version63Bytes = ReadMemory(process, _version63.VersionPtr, (uint)_version63.ToString().Length);
-
-            try
+            foreach (var version in _versions)
             {
-                if (Encoding.ASCII.GetString(version62Bytes) == _version62.ToString())
-                    return _version62;
+                var versionBytes = ReadMemory(process, version.VersionPtr, (uint)version.ToString().Length);
+                try
+                {
+                    if (Encoding.ASCII.GetString(versionBytes) == version.ToString())
+                        return version;
+                }
+                catch { }
             }
-            catch { }
-
-            try
-            {
-                if (Encoding.ASCII.GetString(version63Bytes) == _version63.ToString())
-                    return _version63;
-            }
-            catch { }
 
             return null;
         }
@@ -110,6 +98,13 @@ namespace ptpwn
         {
             throw new Exception(message);
         }
+
+        static PacketTracer[] _versions =
+        {
+            new PacketTracer(new IntPtr(0x0281F628), new IntPtr(0x00C78633), new IntPtr(0x00C78880), "6.2.0.0052"),
+            new PacketTracer(new IntPtr(0x02D97670), new IntPtr(0x00C823C3), new IntPtr(0x00C82610), "6.3.0.0009"),
+            new PacketTracer(new IntPtr(0x02B2984C), new IntPtr(0x00CFC423), new IntPtr(0x00CFC6A9), "7.0.0.0201"),
+        };
     }
 
     static class NativeMethods
@@ -128,13 +123,15 @@ namespace ptpwn
     {
         public readonly IntPtr VersionPtr;
         public readonly IntPtr TargetPtr;
+        public readonly IntPtr EndpointPtr;
 
         private string _version;
 
-        public PacketTracer(IntPtr versionPtr, IntPtr targetPtr, string versionString)
+        public PacketTracer(IntPtr versionPtr, IntPtr targetPtr, IntPtr endpointPtr, string versionString)
         {
             VersionPtr = versionPtr;
             TargetPtr = targetPtr;
+            EndpointPtr = endpointPtr;
             _version = versionString;
         }
 
