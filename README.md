@@ -8,6 +8,8 @@ Tool for Windows to bypass the annoying progress reset when modifying the user p
 * 6.3.0.0009
 * 7.0.0.0201 (only the 32-bit version)
 
+Packet tracer binaries can be obtained at: https://www.netacad.com/group/offerings/packet-tracer/
+
 #### Instructions
 
 1. Run Packet Tracer.
