@@ -9,32 +9,64 @@ namespace ptpwn
     {
         static void Main(string[] args)
         {
+            bool found = false;
+            Console.WriteLine("scanning for packet tracer processes...");
+
             foreach (var process in Process.GetProcesses())
             {
                 if (process.ProcessName != "PacketTracer6" &&
                     process.ProcessName != "PacketTracer7")
                     continue;
 
+                found = true;
+                Console.WriteLine("found process: {0} (id: {1})", process.ProcessName, process.Id);
+
                 var ptr = NativeMethods.OpenProcess(0x001F0FFF, true, process.Id);
                 if (ptr == IntPtr.Zero)
-                    Die();
+                {
+                    Console.WriteLine("error opening process: {0}", GetWin32Error());
+                    continue;
+                }
 
                 var version = ReadVersion(ptr);
                 if (version == null)
-                    Die("unknown packet tracer version");
+                {
+                    Console.WriteLine("error: unsupported packet tracer version");
+                    continue;
+                }
 
-                DoMagic(ptr, version);
+                Console.WriteLine("packet tracer version: {0}", version.ToString());
+                Console.WriteLine("applying patch...");
+
+                try
+                {
+                    DoMagic(ptr, version);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("error patching process: {0}", e);
+                }
+
+                Console.WriteLine("patch successful!");
             }
+
+            if (!found)
+            {
+                Console.WriteLine("error: no packet tracer processes found");
+            }
+
+            Console.WriteLine("press any key to exit...");
+            Console.ReadKey();
         }
 
         static void DoMagic(IntPtr handle, PacketTracer version)
         {
-            //replace the instruction at version.Target with a jmp rel32 instruction
-            //the goal is to skip all of the checks and warnings related to user profile changes
+            // replace the instruction at version.Target with a jmp rel32 instruction
+            // the goal is to skip all of the checks and warnings related to user profile changes
             unchecked
             {
-                //calculate how far we need to jump
-                //-5 because the jmp rel32 instruction is 5 bytes long
+                // calculate how far we need to jump
+                // -5 because the jmp rel32 instruction is 5 bytes long
                 uint dist = (uint)version.EndpointPtr.ToInt32() - (uint)version.TargetPtr.ToInt32() - 5u;
 
                 WriteMemory(handle,
@@ -48,9 +80,9 @@ namespace ptpwn
         {
             foreach (var version in _versions)
             {
-                var versionBytes = ReadMemory(process, version.VersionPtr, (uint)version.ToString().Length);
                 try
                 {
+                    var versionBytes = ReadMemory(process, version.VersionPtr, (uint)version.ToString().Length);
                     if (Encoding.ASCII.GetString(versionBytes) == version.ToString())
                         return version;
                 }
@@ -66,10 +98,10 @@ namespace ptpwn
             byte[] buffer = new byte[length];
 
             if (!NativeMethods.ReadProcessMemory(process, address, buffer, length, ref read))
-                Die();
+                throw new Exception(GetWin32Error());
 
             if (read != length)
-                Die("could not read requested amount of bytes");
+                throw new Exception("could not read requested amount of bytes");
 
             return buffer;
         }
@@ -78,10 +110,10 @@ namespace ptpwn
         {
             uint written = 0;
             if (!NativeMethods.WriteProcessMemory(process, address, buffer, (uint)buffer.Length, ref written))
-                Die();
+                throw new Exception(GetWin32Error());
 
             if (written != (uint)buffer.Length)
-                Die("could not write requested amount of bytes");
+                throw new Exception("could not write requested amount of bytes");
         }
 
         static void WriteMemory(IntPtr process, IntPtr address, byte b)
@@ -89,14 +121,9 @@ namespace ptpwn
             WriteMemory(process, address, new byte[] { b });
         }
 
-        static void Die()
+        static string GetWin32Error()
         {
-            throw new Exception(string.Format("fuck: 0x{0:X}", Marshal.GetLastWin32Error()));
-        }
-
-        static void Die(string message)
-        {
-            throw new Exception(message);
+            return string.Format("0x{0:X}", Marshal.GetLastWin32Error());
         }
 
         static PacketTracer[] _versions =
