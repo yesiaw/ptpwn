@@ -14,6 +14,6 @@ Packet tracer binaries can be obtained at: https://www.netacad.com/group/offerin
 
 #### Instructions
 
-1. Run Packet Tracer.
-2. Run ptpwn.
+1. Start Packet Tracer.
+2. Compile and start ptpwn.
 3. Make the necessary changes to the user profile and save the .pka file.

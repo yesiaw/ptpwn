@@ -31,6 +31,7 @@ namespace ptpwn
                 var version = ReadVersion(ptr);
                 if (version == null)
                 {
+                    NativeMethods.CloseHandle(ptr);
                     Console.WriteLine("error: unsupported packet tracer version");
                     continue;
                 }
@@ -45,6 +46,10 @@ namespace ptpwn
                 catch (Exception e)
                 {
                     Console.WriteLine("error patching process: {0}", e);
+                }
+                finally
+                {
+                    NativeMethods.CloseHandle(ptr);
                 }
 
                 Console.WriteLine("patch successful!");
@@ -146,6 +151,9 @@ namespace ptpwn
 
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern IntPtr OpenProcess(uint access, bool inheritHandle, int processId);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool CloseHandle(IntPtr process);
     }
 
     class PacketTracer
