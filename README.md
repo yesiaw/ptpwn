@@ -2,6 +2,8 @@
 
 This is a tool for Windows to bypass the annoying progress reset when modifying the user profile in Cisco Packet Tracer.
 
+![Demo](/assets/demo.gif)
+
 #### Supported versions
 
 * 6.2.0.0052
@@ -11,10 +13,10 @@ This is a tool for Windows to bypass the annoying progress reset when modifying 
 * 7.1.0.0221 (only the 32-bit build)
 * 7.1.1.0137 (only the 32-bit build)
 
-Packet tracer binaries can be obtained at: https://www.netacad.com/group/offerings/packet-tracer/
-
 #### Instructions
 
 1. Start Packet Tracer.
 2. Compile and start ptpwn.
 3. Make the necessary changes to the user profile and save the .pka file.
+
+Packet tracer binaries can be obtained at: https://www.netacad.com/group/offerings/packet-tracer/
