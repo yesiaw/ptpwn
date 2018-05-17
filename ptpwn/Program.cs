@@ -138,6 +138,7 @@ namespace ptpwn
             new PacketTracer(new IntPtr(0x02B2984C), new IntPtr(0x00CFC423), new IntPtr(0x00CFC6A9), "7.0.0.0201"),
             new PacketTracer(new IntPtr(0x0309B900), new IntPtr(0x00CFCEB3), new IntPtr(0x00CFD139), "7.0.0.0305"),
             new PacketTracer(new IntPtr(0x01FD0030), new IntPtr(0x016022D2), new IntPtr(0x01602486), "7.1.0.0221"),
+            new PacketTracer(new IntPtr(0x01FCEA00), new IntPtr(0x016010D4), new IntPtr(0x01601288), "7.1.1.0137"),
         };
     }
 
