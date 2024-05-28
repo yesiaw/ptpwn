@@ -1,1 +1,4 @@
 * text eol=crlf
+*.gif -text
+*.png -text
+*.jpg -text
